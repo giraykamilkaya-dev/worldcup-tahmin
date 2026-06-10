@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(232,176,75,0.10), transparent 60%),
+    #0B3D2E;
+  color: #F4EFE3;
+  min-height: 100dvh;
+}
+
+/* Saha çizgisi dokusu — üst başlık şeridi için */
+.pitch-stripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0 40px,
+    transparent 40px 80px
+  );
+}
+
+/* Skor tablosu hücresi */
+.scorebox {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up { animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
