@@ -1,29 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import type { StandingRow } from "@/lib/types";
-
 export const dynamic = "force-dynamic";
-
 export default async function StandingsPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   const { data: profile } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user!.id)
     .single();
-
-  const { data: rows } = await supabase
-    .from("standings")
-    .select("*")
-    .order("total_points", { ascending: false });
-
+  const { data: rows } = await supabase.rpc("get_standings");
   const standings = (rows ?? []) as StandingRow[];
   const medals = ["🥇", "🥈", "🥉"];
-
   return (
     <main className="min-h-dvh">
       <Nav isAdmin={profile?.is_admin} />
@@ -34,7 +25,6 @@ export default async function StandingsPage() {
         <p className="mb-6 text-sm text-cream/60">
           Tam skor 5 · gol farkı 3 · doğru sonuç 2 puan.
         </p>
-
         <div className="overflow-hidden rounded-2xl border border-line">
           <table className="w-full text-left">
             <thead className="bg-pitch-deep/80 font-display text-xs uppercase tracking-wide text-cream/50">
