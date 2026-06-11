@@ -23,7 +23,7 @@ export default async function StandingsPage() {
           Puan Tablosu
         </h1>
         <p className="mb-6 text-sm text-cream/60">
-          Tam skor 5 · gol farkı 3 · doğru sonuç 2 puan.
+          Puanlama: Tam skor 5 · Doğru gol farkı 3 · Doğru sonuç (galip/berabere) 2
         </p>
         <div className="overflow-hidden rounded-2xl border border-line">
           <table className="w-full text-left">
