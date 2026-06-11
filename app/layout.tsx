@@ -8,6 +8,14 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   title: "Dünya Kupası Tahmin Ligi",
   description: "2026 Dünya Kupası tahmin oyunu",
+  openGraph: {
+    title: "Dünya Kupası Tahmin Ligi",
+    description: "2026 Dünya Kupası tahmin oyunu",
+    url: "https://worldcup-tahmin.vercel.app",
+    siteName: "Dünya Kupası Tahmin Ligi",
+    type: "website",
+    locale: "tr_TR",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
