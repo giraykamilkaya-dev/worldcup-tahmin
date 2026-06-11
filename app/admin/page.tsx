@@ -108,8 +108,8 @@ export default async function AdminPage() {
         <Section title={`Üyeler (${approved.length})`}>
           {approved.map((p) => (
             <Row key={p.id} p={p}>
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+                <div className="flex flex-wrap items-center gap-2">
                   <GroupSwitch p={p} />
                   {p.is_admin ? (
                     <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
@@ -138,7 +138,7 @@ export default async function AdminPage() {
 // Takma ad: boş bırakınca gerçek ad görünür
 function NicknameForm({ p }: { p: Profile }) {
   return (
-    <form action={setNickname} className="flex items-center gap-2">
+    <form action={setNickname} className="flex w-full items-center gap-2 sm:w-auto">
       <input type="hidden" name="id" value={p.id} />
       <input
         type="text"
@@ -146,9 +146,9 @@ function NicknameForm({ p }: { p: Profile }) {
         defaultValue={p.nickname ?? ""}
         placeholder="Takma ad (boş = gerçek ad)"
         maxLength={30}
-        className="w-44 rounded-lg border border-line bg-pitch px-3 py-1.5 text-xs text-cream placeholder:text-cream/30 outline-none focus:border-gold"
+        className="w-full rounded-lg border border-line bg-pitch px-3 py-1.5 text-xs text-cream placeholder:text-cream/30 outline-none focus:border-gold sm:w-44"
       />
-      <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-gold">
+      <button className="shrink-0 rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-gold">
         Kaydet
       </button>
     </form>
@@ -159,15 +159,15 @@ function NicknameForm({ p }: { p: Profile }) {
 function GroupSwitch({ p }: { p: Profile }) {
   const current = p.group_no ?? 1;
   return (
-    <div className="flex overflow-hidden rounded-full border border-line">
+    <div className="flex shrink-0 overflow-hidden rounded-full border border-line">
       {[1, 2].map((g) => (
         <form action={setGroup} key={g}>
           <input type="hidden" name="id" value={p.id} />
           <input type="hidden" name="group" value={g} />
           <button
             className={`px-3 py-1.5 font-display text-xs uppercase ${current === g
-                ? "bg-gold text-pitch-deep"
-                : "text-cream/60 hover:text-cream"
+              ? "bg-gold text-pitch-deep"
+              : "text-cream/60 hover:text-cream"
               }`}
           >
             {GROUP_NAME[g]}
@@ -202,17 +202,17 @@ function Section({
 
 function Row({ p, children }: { p: Profile; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-line bg-pitch-deep/60 px-4 py-3">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-pitch-deep/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {p.avatar_url ? (
-          <img src={p.avatar_url} alt="" className="h-9 w-9 rounded-full" />
+          <img src={p.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full" />
         ) : (
-          <div className="h-9 w-9 rounded-full bg-cream/10" />
+          <div className="h-9 w-9 shrink-0 rounded-full bg-cream/10" />
         )}
-        <div>
-          <div className="font-600">{p.full_name ?? "—"}</div>
-          <div className="text-xs text-cream/50">{p.email}</div>
+        <div className="min-w-0">
+          <div className="truncate font-600">{p.full_name ?? "—"}</div>
+          <div className="truncate text-xs text-cream/50">{p.email}</div>
         </div>
       </div>
       {children}

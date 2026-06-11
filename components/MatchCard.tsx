@@ -28,9 +28,9 @@ function fmtDate(iso: string) {
 }
 
 function Crest({ src, alt }: { src: string | null; alt: string }) {
-  if (!src) return <div className="h-7 w-7 rounded-full bg-cream/10" />;
+  if (!src) return <div className="h-7 w-7 shrink-0 rounded-full bg-cream/10" />;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className="h-7 w-7 object-contain" />;
+  return <img src={src} alt={alt} className="h-7 w-7 shrink-0 object-contain" />;
 }
 
 export default function MatchCard({
@@ -106,7 +106,7 @@ export default function MatchCard({
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         {/* Ev sahibi */}
         <div className="flex min-w-0 items-center justify-end gap-2 text-right">
-          <span className="truncate font-display text-sm font-600 uppercase sm:text-base">
+          <span className="font-display text-sm font-600 uppercase leading-tight sm:text-base">
             {teamTR(match.home_team)}
           </span>
           <Crest src={match.home_crest} alt={match.home_team ?? ""} />
@@ -132,7 +132,7 @@ export default function MatchCard({
         {/* Deplasman */}
         <div className="flex min-w-0 items-center gap-2">
           <Crest src={match.away_crest} alt={match.away_team ?? ""} />
-          <span className="truncate font-display text-sm font-600 uppercase sm:text-base">
+          <span className="font-display text-sm font-600 uppercase leading-tight sm:text-base">
             {teamTR(match.away_team)}
           </span>
         </div>
