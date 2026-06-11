@@ -53,6 +53,12 @@ const TEAM_META: Record<string, [string, string]> = {
   "Uzbekistan": ["🇺🇿", "Özbekistan"],
 };
 
+// Türkçe görünen ad (sıralama için, emojisiz)
+function trName(team: string) {
+  const meta = TEAM_META[team];
+  return meta ? meta[1] : team;
+}
+
 function label(team: string) {
   const meta = TEAM_META[team];
   return meta ? `${meta[0]} ${meta[1]}` : team;
@@ -70,6 +76,11 @@ export default function ChampionPicker({
   const [team, setTeam] = useState(current ?? "");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Türkçe ada göre alfabetik sırala
+  const sortedTeams = [...teams].sort((a, b) =>
+    trName(a).localeCompare(trName(b), "tr")
+  );
 
   async function save() {
     if (!team) {
@@ -122,7 +133,7 @@ export default function ChampionPicker({
             className="min-w-[180px] flex-1 rounded-lg border border-line bg-pitch px-3 py-2 text-sm text-cream outline-none focus:border-gold"
           >
             <option value="">— Takım seç —</option>
-            {teams.map((t) => (
+            {sortedTeams.map((t) => (
               <option key={t} value={t}>
                 {label(t)}
               </option>

@@ -35,7 +35,7 @@ export const TEAM_TR: Record<string, string> = {
   "Paraguay": "Paraguay",
   "Portugal": "Portekiz",
   "Qatar": "Katar",
-  "Saudi Arabia": "S. Arabistan",
+  "Saudi Arabia": "Suudi Arabistan",
   "Scotland": "İskoçya",
   "Senegal": "Senegal",
   "South Africa": "Güney Afrika",
