@@ -12,9 +12,11 @@ const STAGE_TR: Record<string, string> = {
   FINAL: "Final",
 };
 
+// football-data Türkiye'yi "Turkey" olarak verir
+const TURKEY = "Turkey";
+
 function prettyGroup(g: string | null): string {
   if (!g) return "";
-  // "GROUP_A" -> "Grup A", "Group A" -> "Grup A"
   return g.replace(/group[_ ]?/i, "Grup ").trim();
 }
 
@@ -29,7 +31,6 @@ function fmtDate(iso: string) {
 
 function Crest({ src, alt }: { src: string | null; alt: string }) {
   if (!src) return <div className="h-7 w-7 rounded-full bg-cream/10" />;
-  // football-data.org bazen .svg verir; <img> ile basit ve sorunsuz.
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} className="h-7 w-7 object-contain" />;
 }
@@ -43,6 +44,7 @@ export default function MatchCard({
 }) {
   const locked = new Date(match.utc_date).getTime() <= Date.now();
   const finished = match.status === "FINISHED";
+  const isTurkey = match.home_team === TURKEY || match.away_team === TURKEY;
 
   const [home, setHome] = useState<string>(
     prediction ? String(prediction.home_pred) : ""
@@ -80,17 +82,27 @@ export default function MatchCard({
 
   const stage = match.stage ? STAGE_TR[match.stage] ?? match.stage : "";
   const group = prettyGroup(match.group_name);
-  // Grup aşamasında sadece "Grup A" yeter; eleme turlarında tur adını göster
   const label =
     match.stage === "GROUP_STAGE" ? group || "Grup" : [stage, group].filter(Boolean).join(" · ");
 
-  // Puan rozeti (maç bittiyse)
   const pts = prediction?.points;
 
+  // Türkiye maçında özel çerçeve/zemin
+  const cardClass = isTurkey
+    ? "border-tr-red bg-tr-red/10 shadow-[0_0_0_1px_rgba(227,10,23,0.4)]"
+    : "border-line bg-pitch-deep/60";
+
   return (
-    <div className="fade-up rounded-2xl border border-line bg-pitch-deep/60 p-4">
+    <div className={`fade-up rounded-2xl border p-4 ${cardClass}`}>
       <div className="mb-3 flex items-center justify-between text-xs uppercase tracking-wide text-cream/50">
-        <span>{label || "Maç"}</span>
+        <span className="flex items-center gap-2">
+          {isTurkey && (
+            <span className="rounded-full bg-tr-red px-2 py-0.5 font-600 text-cream">
+              🇹🇷 Türkiye maçı
+            </span>
+          )}
+          <span>{label || "Maç"}</span>
+        </span>
         <span>{fmtDate(match.utc_date)}</span>
       </div>
 
@@ -98,6 +110,7 @@ export default function MatchCard({
         {/* Ev sahibi */}
         <div className="flex items-center justify-end gap-2 text-right">
           <span className="font-display text-base font-600 uppercase">
+            {match.home_team === TURKEY ? "🇹🇷 " : ""}
             {match.home_team ?? "Belirsiz"}
           </span>
           <Crest src={match.home_crest} alt={match.home_team ?? ""} />
@@ -125,11 +138,12 @@ export default function MatchCard({
           <Crest src={match.away_crest} alt={match.away_team ?? ""} />
           <span className="font-display text-base font-600 uppercase">
             {match.away_team ?? "Belirsiz"}
+            {match.away_team === TURKEY ? " 🇹🇷" : ""}
           </span>
         </div>
       </div>
 
-      {/* Alt satır: gerçek skor / kilit / kaydet */}
+      {/* Alt satır */}
       <div className="mt-3 flex min-h-[28px] items-center justify-between">
         <div className="text-xs text-cream/50">
           {finished && match.home_score != null ? (
@@ -178,7 +192,6 @@ function ScoreInput({
   disabled: boolean;
   actual: number | null;
 }) {
-  // Maç bitmişse gerçek skoru göster (kilitli)
   const shown = actual != null ? String(actual) : value;
   return (
     <input
