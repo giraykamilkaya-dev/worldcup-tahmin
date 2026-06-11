@@ -30,6 +30,7 @@ export type Profile = {
   approved: boolean;
   is_admin: boolean;
   group_no?: number;
+  nickname?: string | null;
 };
 
 export type StandingRow = {

@@ -9,9 +9,8 @@ export const dynamic = "force-dynamic";
 
 const GROUP_NAME: Record<number, string> = { 1: "Aile", 2: "QuitGang" };
 
-// --- Server Action: onay durumu ---
-async function setApproval(formData: FormData) {
-  "use server";
+// --- yetki kontrolü (ortak) ---
+async function requireAdmin() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,7 +22,12 @@ async function setApproval(formData: FormData) {
     .eq("id", user.id)
     .single();
   if (!me?.is_admin) throw new Error("Yetkisiz");
+}
 
+// --- Server Action: onay durumu ---
+async function setApproval(formData: FormData) {
+  "use server";
+  await requireAdmin();
   const targetId = String(formData.get("id"));
   const approve = String(formData.get("approve")) === "true";
   const admin = createAdminClient();
@@ -34,23 +38,24 @@ async function setApproval(formData: FormData) {
 // --- Server Action: grup değiştir ---
 async function setGroup(formData: FormData) {
   "use server";
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  if (!me?.is_admin) throw new Error("Yetkisiz");
-
+  await requireAdmin();
   const targetId = String(formData.get("id"));
   const group = Number(formData.get("group"));
   if (group !== 1 && group !== 2) throw new Error("Geçersiz grup");
   const admin = createAdminClient();
   await admin.from("profiles").update({ group_no: group }).eq("id", targetId);
+  revalidatePath("/admin");
+}
+
+// --- Server Action: takma ad (nick) ---
+async function setNickname(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const targetId = String(formData.get("id"));
+  const raw = String(formData.get("nickname") ?? "").trim();
+  const nickname = raw === "" ? null : raw.slice(0, 30); // boşsa temizle, en fazla 30 karakter
+  const admin = createAdminClient();
+  await admin.from("profiles").update({ nickname }).eq("id", targetId);
   revalidatePath("/admin");
 }
 
@@ -70,7 +75,7 @@ export default async function AdminPage() {
   const admin = createAdminClient();
   const { data: profiles } = await admin
     .from("profiles")
-    .select("id, email, full_name, avatar_url, approved, is_admin, group_no")
+    .select("id, email, full_name, avatar_url, approved, is_admin, group_no, nickname")
     .order("created_at", { ascending: true });
 
   const list = (profiles ?? []) as Profile[];
@@ -103,27 +108,50 @@ export default async function AdminPage() {
         <Section title={`Üyeler (${approved.length})`}>
           {approved.map((p) => (
             <Row key={p.id} p={p}>
-              <div className="flex items-center gap-2">
-                <GroupSwitch p={p} />
-                {p.is_admin ? (
-                  <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
-                    Yönetici
-                  </span>
-                ) : (
-                  <form action={setApproval}>
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="approve" value="false" />
-                    <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-tr-red">
-                      Çıkar
-                    </button>
-                  </form>
-                )}
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <GroupSwitch p={p} />
+                  {p.is_admin ? (
+                    <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
+                      Yönetici
+                    </span>
+                  ) : (
+                    <form action={setApproval}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="approve" value="false" />
+                      <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-tr-red">
+                        Çıkar
+                      </button>
+                    </form>
+                  )}
+                </div>
+                <NicknameForm p={p} />
               </div>
             </Row>
           ))}
         </Section>
       </div>
     </main>
+  );
+}
+
+// Takma ad: boş bırakınca gerçek ad görünür
+function NicknameForm({ p }: { p: Profile }) {
+  return (
+    <form action={setNickname} className="flex items-center gap-2">
+      <input type="hidden" name="id" value={p.id} />
+      <input
+        type="text"
+        name="nickname"
+        defaultValue={p.nickname ?? ""}
+        placeholder="Takma ad (boş = gerçek ad)"
+        maxLength={30}
+        className="w-44 rounded-lg border border-line bg-pitch px-3 py-1.5 text-xs text-cream placeholder:text-cream/30 outline-none focus:border-gold"
+      />
+      <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-gold">
+        Kaydet
+      </button>
+    </form>
   );
 }
 
@@ -137,11 +165,10 @@ function GroupSwitch({ p }: { p: Profile }) {
           <input type="hidden" name="id" value={p.id} />
           <input type="hidden" name="group" value={g} />
           <button
-            className={`px-3 py-1.5 font-display text-xs uppercase ${
-              current === g
+            className={`px-3 py-1.5 font-display text-xs uppercase ${current === g
                 ? "bg-gold text-pitch-deep"
                 : "text-cream/60 hover:text-cream"
-            }`}
+              }`}
           >
             {GROUP_NAME[g]}
           </button>
@@ -163,9 +190,8 @@ function Section({
   return (
     <section className="mb-8">
       <h2
-        className={`mb-3 font-display text-lg uppercase tracking-wide ${
-          highlight ? "text-gold" : "text-cream/50"
-        }`}
+        className={`mb-3 font-display text-lg uppercase tracking-wide ${highlight ? "text-gold" : "text-cream/50"
+          }`}
       >
         {title}
       </h2>
