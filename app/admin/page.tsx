@@ -7,7 +7,9 @@ import type { Profile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-// --- Server Action: bir üyenin onay durumunu değiştir ---
+const GROUP_NAME: Record<number, string> = { 1: "Aile", 2: "QuitGang" };
+
+// --- Server Action: onay durumu ---
 async function setApproval(formData: FormData) {
   "use server";
   const supabase = await createClient();
@@ -15,8 +17,6 @@ async function setApproval(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-
-  // Çağıran admin mi? (service role'dan önce DOĞRULA)
   const { data: me } = await supabase
     .from("profiles")
     .select("is_admin")
@@ -26,9 +26,31 @@ async function setApproval(formData: FormData) {
 
   const targetId = String(formData.get("id"));
   const approve = String(formData.get("approve")) === "true";
-
   const admin = createAdminClient();
   await admin.from("profiles").update({ approved: approve }).eq("id", targetId);
+  revalidatePath("/admin");
+}
+
+// --- Server Action: grup değiştir ---
+async function setGroup(formData: FormData) {
+  "use server";
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+  if (!me?.is_admin) throw new Error("Yetkisiz");
+
+  const targetId = String(formData.get("id"));
+  const group = Number(formData.get("group"));
+  if (group !== 1 && group !== 2) throw new Error("Geçersiz grup");
+  const admin = createAdminClient();
+  await admin.from("profiles").update({ group_no: group }).eq("id", targetId);
   revalidatePath("/admin");
 }
 
@@ -45,11 +67,10 @@ export default async function AdminPage() {
     .single();
   if (!me?.is_admin) redirect("/");
 
-  // Tüm profilleri service role ile çek (admin görür)
   const admin = createAdminClient();
   const { data: profiles } = await admin
     .from("profiles")
-    .select("id, email, full_name, avatar_url, approved, is_admin")
+    .select("id, email, full_name, avatar_url, approved, is_admin, group_no")
     .order("created_at", { ascending: true });
 
   const list = (profiles ?? []) as Profile[];
@@ -79,27 +100,54 @@ export default async function AdminPage() {
           ))}
         </Section>
 
-        <Section title={`Aile üyeleri (${approved.length})`}>
+        <Section title={`Üyeler (${approved.length})`}>
           {approved.map((p) => (
             <Row key={p.id} p={p}>
-              {p.is_admin ? (
-                <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
-                  Yönetici
-                </span>
-              ) : (
-                <form action={setApproval}>
-                  <input type="hidden" name="id" value={p.id} />
-                  <input type="hidden" name="approve" value="false" />
-                  <button className="rounded-full border border-line px-4 py-1.5 font-display text-sm uppercase text-cream/60 hover:text-tr-red">
-                    Çıkar
-                  </button>
-                </form>
-              )}
+              <div className="flex items-center gap-2">
+                <GroupSwitch p={p} />
+                {p.is_admin ? (
+                  <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
+                    Yönetici
+                  </span>
+                ) : (
+                  <form action={setApproval}>
+                    <input type="hidden" name="id" value={p.id} />
+                    <input type="hidden" name="approve" value="false" />
+                    <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-tr-red">
+                      Çıkar
+                    </button>
+                  </form>
+                )}
+              </div>
             </Row>
           ))}
         </Section>
       </div>
     </main>
+  );
+}
+
+// Grup değiştirme: aktif grup vurgulu, diğerine basınca taşır
+function GroupSwitch({ p }: { p: Profile }) {
+  const current = p.group_no ?? 1;
+  return (
+    <div className="flex overflow-hidden rounded-full border border-line">
+      {[1, 2].map((g) => (
+        <form action={setGroup} key={g}>
+          <input type="hidden" name="id" value={p.id} />
+          <input type="hidden" name="group" value={g} />
+          <button
+            className={`px-3 py-1.5 font-display text-xs uppercase ${
+              current === g
+                ? "bg-gold text-pitch-deep"
+                : "text-cream/60 hover:text-cream"
+            }`}
+          >
+            {GROUP_NAME[g]}
+          </button>
+        </form>
+      ))}
+    </div>
   );
 }
 

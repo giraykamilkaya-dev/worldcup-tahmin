@@ -29,12 +29,15 @@ export type Profile = {
   avatar_url: string | null;
   approved: boolean;
   is_admin: boolean;
+  group_no?: number;
 };
 
 export type StandingRow = {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
+  group_no: number;
+  group_name: string;
   total_points: number;
   scored_count: number;
   exact_count: number;
