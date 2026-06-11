@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
+import AutoRefresh from "@/components/AutoRefresh";
 import type { StandingRow } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export default async function StandingsPage() {
@@ -17,6 +18,7 @@ export default async function StandingsPage() {
   const medals = ["🥇", "🥈", "🥉"];
   return (
     <main className="min-h-dvh">
+      <AutoRefresh seconds={30} />
       <Nav isAdmin={profile?.is_admin} />
       <div className="mx-auto max-w-2xl px-4 py-6">
         <h1 className="mb-1 font-display text-3xl font-700 uppercase tracking-wide">
