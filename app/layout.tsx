@@ -6,8 +6,8 @@ const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald", weight: [
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Aile Dünya Kupası Tahmin Ligi",
-  description: "2026 Dünya Kupası aile tahmin oyunu",
+  title: "Dünya Kupası Tahmin Ligi",
+  description: "2026 Dünya Kupası tahmin oyunu",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

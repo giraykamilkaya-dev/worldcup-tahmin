@@ -19,7 +19,7 @@ export default function Nav({ isAdmin }: { isAdmin?: boolean }) {
         <Link href="/" className="flex items-center gap-2">
           <span className="text-gold">⚽</span>
           <span className="font-display text-lg font-700 uppercase tracking-wide text-cream">
-            Aile Tahmin Ligi
+            Dünya Kupası Tahmin Ligi
           </span>
         </Link>
         <div className="flex items-center gap-4 font-display text-sm uppercase tracking-wide">
