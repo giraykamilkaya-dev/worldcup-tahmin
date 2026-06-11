@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { Match, Prediction } from "@/lib/types";
+import { teamTR, TURKEY } from "@/lib/teams";
 
 const STAGE_TR: Record<string, string> = {
   GROUP_STAGE: "Grup",
@@ -11,9 +12,6 @@ const STAGE_TR: Record<string, string> = {
   THIRD_PLACE: "3.'lük Maçı",
   FINAL: "Final",
 };
-
-// football-data Türkiye'yi "Turkey" olarak verir
-const TURKEY = "Turkey";
 
 function prettyGroup(g: string | null): string {
   if (!g) return "";
@@ -87,7 +85,6 @@ export default function MatchCard({
 
   const pts = prediction?.points;
 
-  // Türkiye maçında özel çerçeve/zemin
   const cardClass = isTurkey
     ? "border-tr-red bg-tr-red/10 shadow-[0_0_0_1px_rgba(227,10,23,0.4)]"
     : "border-line bg-pitch-deep/60";
@@ -108,10 +105,9 @@ export default function MatchCard({
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         {/* Ev sahibi */}
-        <div className="flex items-center justify-end gap-2 text-right">
-          <span className="font-display text-base font-600 uppercase">
-            {match.home_team === TURKEY ? "🇹🇷 " : ""}
-            {match.home_team ?? "Belirsiz"}
+        <div className="flex min-w-0 items-center justify-end gap-2 text-right">
+          <span className="truncate font-display text-sm font-600 uppercase sm:text-base">
+            {teamTR(match.home_team)}
           </span>
           <Crest src={match.home_crest} alt={match.home_team ?? ""} />
         </div>
@@ -134,11 +130,10 @@ export default function MatchCard({
         </div>
 
         {/* Deplasman */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Crest src={match.away_crest} alt={match.away_team ?? ""} />
-          <span className="font-display text-base font-600 uppercase">
-            {match.away_team ?? "Belirsiz"}
-            {match.away_team === TURKEY ? " 🇹🇷" : ""}
+          <span className="truncate font-display text-sm font-600 uppercase sm:text-base">
+            {teamTR(match.away_team)}
           </span>
         </div>
       </div>

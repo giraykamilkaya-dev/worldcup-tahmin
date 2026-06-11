@@ -1,0 +1,58 @@
+// football-data adı -> Türkçe ad. (Maç kartında bayrak armadan geldiği için burada sadece isim.)
+export const TEAM_TR: Record<string, string> = {
+  "Algeria": "Cezayir",
+  "Argentina": "Arjantin",
+  "Australia": "Avustralya",
+  "Austria": "Avusturya",
+  "Belgium": "Belçika",
+  "Bosnia-Herzegovina": "Bosna-Hersek",
+  "Brazil": "Brezilya",
+  "Canada": "Kanada",
+  "Cape Verde Islands": "Cabo Verde",
+  "Colombia": "Kolombiya",
+  "Congo DR": "Kongo DC",
+  "Croatia": "Hırvatistan",
+  "Curaçao": "Curaçao",
+  "Czechia": "Çekya",
+  "Ecuador": "Ekvador",
+  "Egypt": "Mısır",
+  "England": "İngiltere",
+  "France": "Fransa",
+  "Germany": "Almanya",
+  "Ghana": "Gana",
+  "Haiti": "Haiti",
+  "Iran": "İran",
+  "Iraq": "Irak",
+  "Ivory Coast": "Fildişi Sahili",
+  "Japan": "Japonya",
+  "Jordan": "Ürdün",
+  "Mexico": "Meksika",
+  "Morocco": "Fas",
+  "Netherlands": "Hollanda",
+  "New Zealand": "Yeni Zelanda",
+  "Norway": "Norveç",
+  "Panama": "Panama",
+  "Paraguay": "Paraguay",
+  "Portugal": "Portekiz",
+  "Qatar": "Katar",
+  "Saudi Arabia": "S. Arabistan",
+  "Scotland": "İskoçya",
+  "Senegal": "Senegal",
+  "South Africa": "Güney Afrika",
+  "South Korea": "Güney Kore",
+  "Spain": "İspanya",
+  "Sweden": "İsveç",
+  "Switzerland": "İsviçre",
+  "Tunisia": "Tunus",
+  "Turkey": "Türkiye",
+  "United States": "ABD",
+  "Uruguay": "Uruguay",
+  "Uzbekistan": "Özbekistan",
+};
+
+export function teamTR(name: string | null): string {
+  if (!name) return "Belirsiz";
+  return TEAM_TR[name] ?? name;
+}
+
+export const TURKEY = "Turkey";
