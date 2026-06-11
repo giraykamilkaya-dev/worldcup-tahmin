@@ -1,6 +1,63 @@
 "use client";
 import { useState } from "react";
 
+// football-data adı -> [emoji bayrak, Türkçe görünen ad]
+const TEAM_META: Record<string, [string, string]> = {
+  "Algeria": ["🇩🇿", "Cezayir"],
+  "Argentina": ["🇦🇷", "Arjantin"],
+  "Australia": ["🇦🇺", "Avustralya"],
+  "Austria": ["🇦🇹", "Avusturya"],
+  "Belgium": ["🇧🇪", "Belçika"],
+  "Bosnia-Herzegovina": ["🇧🇦", "Bosna-Hersek"],
+  "Brazil": ["🇧🇷", "Brezilya"],
+  "Canada": ["🇨🇦", "Kanada"],
+  "Cape Verde Islands": ["🇨🇻", "Cabo Verde"],
+  "Colombia": ["🇨🇴", "Kolombiya"],
+  "Congo DR": ["🇨🇩", "Kongo DC"],
+  "Croatia": ["🇭🇷", "Hırvatistan"],
+  "Curaçao": ["🇨🇼", "Curaçao"],
+  "Czechia": ["🇨🇿", "Çekya"],
+  "Ecuador": ["🇪🇨", "Ekvador"],
+  "Egypt": ["🇪🇬", "Mısır"],
+  "England": ["🏴󠁧󠁢󠁥󠁮󠁧󠁿", "İngiltere"],
+  "France": ["🇫🇷", "Fransa"],
+  "Germany": ["🇩🇪", "Almanya"],
+  "Ghana": ["🇬🇭", "Gana"],
+  "Haiti": ["🇭🇹", "Haiti"],
+  "Iran": ["🇮🇷", "İran"],
+  "Iraq": ["🇮🇶", "Irak"],
+  "Ivory Coast": ["🇨🇮", "Fildişi Sahili"],
+  "Japan": ["🇯🇵", "Japonya"],
+  "Jordan": ["🇯🇴", "Ürdün"],
+  "Mexico": ["🇲🇽", "Meksika"],
+  "Morocco": ["🇲🇦", "Fas"],
+  "Netherlands": ["🇳🇱", "Hollanda"],
+  "New Zealand": ["🇳🇿", "Yeni Zelanda"],
+  "Norway": ["🇳🇴", "Norveç"],
+  "Panama": ["🇵🇦", "Panama"],
+  "Paraguay": ["🇵🇾", "Paraguay"],
+  "Portugal": ["🇵🇹", "Portekiz"],
+  "Qatar": ["🇶🇦", "Katar"],
+  "Saudi Arabia": ["🇸🇦", "Suudi Arabistan"],
+  "Scotland": ["🏴󠁧󠁢󠁳󠁣󠁴󠁿", "İskoçya"],
+  "Senegal": ["🇸🇳", "Senegal"],
+  "South Africa": ["🇿🇦", "Güney Afrika"],
+  "South Korea": ["🇰🇷", "Güney Kore"],
+  "Spain": ["🇪🇸", "İspanya"],
+  "Sweden": ["🇸🇪", "İsveç"],
+  "Switzerland": ["🇨🇭", "İsviçre"],
+  "Tunisia": ["🇹🇳", "Tunus"],
+  "Turkey": ["🇹🇷", "Türkiye"],
+  "United States": ["🇺🇸", "ABD"],
+  "Uruguay": ["🇺🇾", "Uruguay"],
+  "Uzbekistan": ["🇺🇿", "Özbekistan"],
+};
+
+function label(team: string) {
+  const meta = TEAM_META[team];
+  return meta ? `${meta[0]} ${meta[1]}` : team;
+}
+
 export default function ChampionPicker({
   teams,
   current,
@@ -52,7 +109,7 @@ export default function ChampionPicker({
       {locked ? (
         <div className="text-sm text-cream/70">
           {current ? (
-            <>Tahminin: <b className="text-gold">{current}</b> 🔒</>
+            <>Tahminin: <b className="text-gold">{label(current)}</b> 🔒</>
           ) : (
             <>🔒 Şampiyon tahmini kapandı (tahmin girmedin).</>
           )}
@@ -67,7 +124,7 @@ export default function ChampionPicker({
             <option value="">— Takım seç —</option>
             {teams.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {label(t)}
               </option>
             ))}
           </select>
