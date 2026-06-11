@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import MatchCard from "@/components/MatchCard";
+import ChampionPicker from "@/components/ChampionPicker";
 import type { Match, Prediction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+// Şampiyon tahmini kilidi (TR 28 Haziran 00:00 = UTC 27 Haz 21:00) — route ile aynı olmalı
+const CHAMPION_LOCK_AT = new Date("2026-06-27T21:00:00Z");
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -13,7 +17,7 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_admin, full_name")
+    .select("is_admin, full_name, champion_pick")
     .eq("id", user!.id)
     .single();
 
@@ -27,12 +31,17 @@ export default async function HomePage() {
     .select("*")
     .eq("user_id", user!.id);
 
+  const { data: teamRows } = await supabase.rpc("get_teams");
+  const teams = (teamRows ?? []).map((t: { team: string }) => t.team);
+
   const predByMatch = new Map<number, Prediction>();
   (preds ?? []).forEach((p) => predByMatch.set(p.match_id, p as Prediction));
 
   const all = (matches ?? []) as Match[];
   const open = all.filter((m) => m.status !== "FINISHED");
   const done = all.filter((m) => m.status === "FINISHED").reverse();
+
+  const championLocked = Date.now() >= CHAMPION_LOCK_AT.getTime();
 
   return (
     <main className="min-h-dvh">
@@ -44,6 +53,14 @@ export default async function HomePage() {
         <p className="mb-6 text-sm text-cream/60">
           Maç başlamadan skor tahminini gir. Maç saati gelince tahmin kapanır.
         </p>
+
+        {teams.length > 0 && (
+          <ChampionPicker
+            teams={teams}
+            current={profile?.champion_pick ?? null}
+            locked={championLocked}
+          />
+        )}
 
         {all.length === 0 && (
           <div className="rounded-2xl border border-line bg-pitch-deep/60 p-6 text-center text-cream/60">

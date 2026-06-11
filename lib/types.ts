@@ -31,6 +31,7 @@ export type Profile = {
   is_admin: boolean;
   group_no?: number;
   nickname?: string | null;
+  champion_pick?: string | null;
 };
 
 export type StandingRow = {
