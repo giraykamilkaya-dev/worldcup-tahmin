@@ -80,7 +80,20 @@ export default async function AdminPage() {
 
   const list = (profiles ?? []) as Profile[];
   const pending = list.filter((p) => !p.approved);
-  const approved = list.filter((p) => p.approved);
+
+  // Sıralama adı: nick varsa nick, yoksa gerçek ad (sonra email)
+  const sortName = (p: Profile) =>
+    (p.nickname?.trim() || p.full_name || p.email || "").toLocaleLowerCase("tr");
+  const byName = (a: Profile, b: Profile) =>
+    sortName(a).localeCompare(sortName(b), "tr");
+
+  // Onaylılar: önce Aile (1), sonra QuitGang (2); her grup kendi içinde alfabetik
+  const aile = list
+    .filter((p) => p.approved && (p.group_no ?? 1) === 1)
+    .sort(byName);
+  const quitgang = list
+    .filter((p) => p.approved && (p.group_no ?? 1) === 2)
+    .sort(byName);
 
   return (
     <main className="min-h-dvh">
@@ -105,33 +118,48 @@ export default async function AdminPage() {
           ))}
         </Section>
 
-        <Section title={`Üyeler (${approved.length})`}>
-          {approved.map((p) => (
-            <Row key={p.id} p={p}>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-                <div className="flex flex-wrap items-center gap-2">
-                  <GroupSwitch p={p} />
-                  {p.is_admin ? (
-                    <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
-                      Yönetici
-                    </span>
-                  ) : (
-                    <form action={setApproval}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <input type="hidden" name="approve" value="false" />
-                      <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-tr-red">
-                        Çıkar
-                      </button>
-                    </form>
-                  )}
-                </div>
-                <NicknameForm p={p} />
-              </div>
-            </Row>
-          ))}
-        </Section>
+        <MemberSection title={`Aile (${aile.length})`} members={aile} />
+        <MemberSection title={`QuitGang (${quitgang.length})`} members={quitgang} />
       </div>
     </main>
+  );
+}
+
+// Bir grubun üyelerini başlıklı listeler (boşsa hiç göstermez)
+function MemberSection({
+  title,
+  members,
+}: {
+  title: string;
+  members: Profile[];
+}) {
+  if (members.length === 0) return null;
+  return (
+    <Section title={title}>
+      {members.map((p) => (
+        <Row key={p.id} p={p}>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            <div className="flex flex-wrap items-center gap-2">
+              <GroupSwitch p={p} />
+              {p.is_admin ? (
+                <span className="rounded-full bg-tr-red/20 px-3 py-1 text-xs font-600 text-tr-red">
+                  Yönetici
+                </span>
+              ) : (
+                <form action={setApproval}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <input type="hidden" name="approve" value="false" />
+                  <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-tr-red">
+                    Çıkar
+                  </button>
+                </form>
+              )}
+            </div>
+            <NicknameForm p={p} />
+          </div>
+        </Row>
+      ))}
+    </Section>
   );
 }
 
