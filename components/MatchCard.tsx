@@ -44,6 +44,13 @@ export default function MatchCard({
   const finished = match.status === "FINISHED";
   const isTurkey = match.home_team === TURKEY || match.away_team === TURKEY;
 
+  // Maç başladı ama bitmedi → canlı (free planda skor gecikmeli gelebilir)
+  const live = ["IN_PLAY", "PAUSED", "LIVE"].includes(match.status);
+  const liveScore =
+    live && match.home_score != null && match.away_score != null
+      ? `${match.home_score} - ${match.away_score}`
+      : null;
+
   const [home, setHome] = useState<string>(
     prediction ? String(prediction.home_pred) : ""
   );
@@ -141,6 +148,11 @@ export default function MatchCard({
                   +{pts} puan
                 </span>
               )}
+            </span>
+          ) : live ? (
+            <span className="flex items-center gap-1 rounded-full bg-tr-red/20 px-2 py-0.5 font-600 text-tr-red">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-tr-red" />
+              CANLI{liveScore ? ` ${liveScore}` : ""}
             </span>
           ) : locked ? (
             <span className="text-tr-red/80">🔒 Tahmin kapandı</span>

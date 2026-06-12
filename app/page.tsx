@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import ChampionPicker from "@/components/ChampionPicker";
 import MatchTabs from "@/components/MatchTabs";
+import AutoRefresh from "@/components/AutoRefresh";
 import type { Match, Prediction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,11 @@ export default async function HomePage() {
   const open = all.filter((m) => m.status !== "FINISHED");
   const done = all.filter((m) => m.status === "FINISHED").reverse();
 
+  // Devam eden maç var mı? (canlı skor için otomatik tazeleme)
+  const hasLive = all.some((m) =>
+    ["IN_PLAY", "PAUSED", "LIVE"].includes(m.status)
+  );
+
   const championLocked = Date.now() >= CHAMPION_LOCK_AT.getTime();
 
   // Tahmin sayacı: takımı belli olan maçları baz al (TBD eleme maçları sayılmaz)
@@ -54,6 +60,9 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-dvh">
+      {/* Devam eden maç varsa sayfayı 60 sn'de bir tazele (canlı skor) */}
+      {hasLive && <AutoRefresh seconds={60} />}
+
       <Nav isAdmin={profile?.is_admin} />
       <div className="mx-auto max-w-3xl px-4 py-6">
         <h1 className="mb-1 font-display text-3xl font-700 uppercase tracking-wide">
