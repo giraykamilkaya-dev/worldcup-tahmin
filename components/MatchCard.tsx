@@ -112,21 +112,11 @@ export default function MatchCard({
           <Crest src={match.home_crest} alt={match.home_team ?? ""} />
         </div>
 
-        {/* Skor kutusu */}
+        {/* Skor kutusu — her zaman kişinin tahminini gösterir */}
         <div className="scorebox flex items-center gap-1">
-          <ScoreInput
-            value={home}
-            onChange={setHome}
-            disabled={locked}
-            actual={finished ? match.home_score : null}
-          />
+          <ScoreInput value={home} onChange={setHome} disabled={locked} />
           <span className="px-1 font-display text-cream/40">:</span>
-          <ScoreInput
-            value={away}
-            onChange={setAway}
-            disabled={locked}
-            actual={finished ? match.away_score : null}
-          />
+          <ScoreInput value={away} onChange={setAway} disabled={locked} />
         </div>
 
         {/* Deplasman */}
@@ -139,10 +129,15 @@ export default function MatchCard({
       </div>
 
       {/* Alt satır */}
-      <div className="mt-3 flex min-h-[28px] items-center justify-between">
+      <div className="mt-3 flex min-h-[28px] items-center justify-between gap-2">
         <div className="text-xs text-cream/50">
           {finished && match.home_score != null ? (
             <span>
+              {prediction ? (
+                <>Tahminin: <b className="text-cream">{prediction.home_pred} - {prediction.away_pred}</b> · </>
+              ) : (
+                <>Tahmin yok · </>
+              )}
               Sonuç: <b className="text-cream">{match.home_score} - {match.away_score}</b>
               {pts != null && (
                 <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 font-600 text-gold">
@@ -165,7 +160,7 @@ export default function MatchCard({
           <button
             onClick={save}
             disabled={saving}
-            className="rounded-full bg-tr-red px-4 py-1.5 font-display text-sm font-600 uppercase tracking-wide text-cream transition hover:bg-tr-red/90 disabled:opacity-50"
+            className="shrink-0 rounded-full bg-tr-red px-4 py-1.5 font-display text-sm font-600 uppercase tracking-wide text-cream transition hover:bg-tr-red/90 disabled:opacity-50"
           >
             {saving ? "..." : prediction ? "Güncelle" : "Kaydet"}
           </button>
@@ -180,20 +175,17 @@ function ScoreInput({
   value,
   onChange,
   disabled,
-  actual,
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled: boolean;
-  actual: number | null;
 }) {
-  const shown = actual != null ? String(actual) : value;
   return (
     <input
       inputMode="numeric"
       pattern="[0-9]*"
       maxLength={2}
-      value={shown}
+      value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
       className="h-12 w-12 rounded-lg border border-line bg-pitch text-center font-display text-2xl font-700 text-gold outline-none focus:border-gold disabled:text-cream/70"
