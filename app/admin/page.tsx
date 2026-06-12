@@ -59,6 +59,18 @@ async function setNickname(formData: FormData) {
   revalidatePath("/admin");
 }
 
+// --- Server Action: üyeyi reddet/sil ---
+async function rejectUser(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const targetId = String(formData.get("id"));
+  const admin = createAdminClient();
+  // Önce profili sil, sonra auth kaydını sil (tekrar girerse yeni kayıt oluşur)
+  await admin.from("profiles").delete().eq("id", targetId);
+  await admin.auth.admin.deleteUser(targetId).catch(() => { });
+  revalidatePath("/admin");
+}
+
 export default async function AdminPage() {
   const supabase = await createClient();
   const {
@@ -107,13 +119,21 @@ export default async function AdminPage() {
           {pending.length === 0 && <Empty>Bekleyen yok.</Empty>}
           {pending.map((p) => (
             <Row key={p.id} p={p}>
-              <form action={setApproval}>
-                <input type="hidden" name="id" value={p.id} />
-                <input type="hidden" name="approve" value="true" />
-                <button className="rounded-full bg-gold px-4 py-1.5 font-display text-sm font-600 uppercase text-pitch-deep hover:bg-gold/90">
-                  Onayla
-                </button>
-              </form>
+              <div className="flex items-center gap-2">
+                <form action={setApproval}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <input type="hidden" name="approve" value="true" />
+                  <button className="rounded-full bg-gold px-4 py-1.5 font-display text-sm font-600 uppercase text-pitch-deep hover:bg-gold/90">
+                    Onayla
+                  </button>
+                </form>
+                <form action={rejectUser}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <button className="rounded-full border border-line px-3 py-1.5 font-display text-xs uppercase text-cream/60 hover:text-tr-red hover:border-tr-red">
+                    Reddet
+                  </button>
+                </form>
+              </div>
             </Row>
           ))}
         </Section>
