@@ -169,10 +169,11 @@ function NicknameForm({ p }: { p: Profile }) {
     <form action={setNickname} className="flex w-full items-center gap-2 sm:w-auto">
       <input type="hidden" name="id" value={p.id} />
       <input
+        key={`${p.id}-${p.nickname ?? ""}`}
         type="text"
         name="nickname"
         defaultValue={p.nickname ?? ""}
-        placeholder="Takma ad (boş = gerçek ad)"
+        placeholder="Takma ad"
         maxLength={30}
         className="w-full rounded-lg border border-line bg-pitch px-3 py-1.5 text-xs text-cream placeholder:text-cream/30 outline-none focus:border-gold sm:w-44"
       />
