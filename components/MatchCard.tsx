@@ -150,12 +150,15 @@ export default function MatchCard({
               )}
             </span>
           ) : live ? (
-            <span className="flex items-center gap-1 rounded-full bg-tr-red/20 px-2 py-0.5 font-600 text-tr-red">
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-tr-red" />
-              CANLI{liveScore ? ` ${liveScore}` : ""}
+            <span className="flex items-center gap-6">
+              <span className="text-tr-red/80">🔒 Tahmin kapandı.</span>
+              <span className="flex items-center gap-1 rounded-full bg-tr-red/20 px-2 py-0.5 font-600 text-tr-red">
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-tr-red" />
+                CANLI{liveScore ? ` ${liveScore}` : ""}
+              </span>
             </span>
           ) : locked ? (
-            <span className="text-tr-red/80">🔒 Tahmin kapandı</span>
+            <span className="text-tr-red/80">🔒 Tahmin kapandı.</span>
           ) : prediction ? (
             <span>
               Tahminin: {prediction.home_pred} - {prediction.away_pred}
