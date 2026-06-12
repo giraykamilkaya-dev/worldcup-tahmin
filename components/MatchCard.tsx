@@ -135,11 +135,6 @@ export default function MatchCard({
         <div className="text-xs text-cream/50">
           {finished && match.home_score != null ? (
             <span>
-              {prediction ? (
-                <>Tahminin: <b className="text-cream">{prediction.home_pred} - {prediction.away_pred}</b> · </>
-              ) : (
-                <>Tahmin yok · </>
-              )}
               Sonuç: <b className="text-cream">{match.home_score} - {match.away_score}</b>
               {pts != null && (
                 <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 font-600 text-gold">
