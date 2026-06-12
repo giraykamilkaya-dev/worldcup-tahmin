@@ -52,6 +52,7 @@ export default function MatchCard({
   );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [hasPrediction, setHasPrediction] = useState<boolean>(!!prediction);
 
   async function save() {
     if (home === "" || away === "") {
@@ -72,6 +73,7 @@ export default function MatchCard({
     setSaving(false);
     if (res.ok) {
       setMsg("Kaydedildi ✓");
+      setHasPrediction(true);
     } else {
       const j = await res.json().catch(() => ({}));
       setMsg(j.error || "Hata");
@@ -162,7 +164,7 @@ export default function MatchCard({
             disabled={saving}
             className="shrink-0 rounded-full bg-tr-red px-4 py-1.5 font-display text-sm font-600 uppercase tracking-wide text-cream transition hover:bg-tr-red/90 disabled:opacity-50"
           >
-            {saving ? "..." : prediction ? "Güncelle" : "Kaydet"}
+            {saving ? "..." : hasPrediction ? "Güncelle" : "Kaydet"}
           </button>
         )}
         {msg && <span className="text-xs text-gold">{msg}</span>}
