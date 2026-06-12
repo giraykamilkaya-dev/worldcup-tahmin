@@ -18,7 +18,7 @@ export default async function PendingPage() {
           Onay bekleniyor
         </h1>
         <p className="mt-3 text-cream/60">
-          Hesabın oluşturuldu ({user?.email}). Yönetici (aile ferdi) seni onayladığında
+          Hesabın oluşturuldu ({user?.email}). Yönetici seni onayladığında
           oyuna katılabileceksin. Onaylandıktan sonra sayfayı yenile.
         </p>
       </div>

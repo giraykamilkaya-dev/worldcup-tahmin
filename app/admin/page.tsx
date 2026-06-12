@@ -7,7 +7,7 @@ import type { Profile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const GROUP_NAME: Record<number, string> = { 1: "Aile", 2: "QuitGang" };
+const GROUP_NAME: Record<number, string> = { 1: "Aile", 2: "Gang" };
 
 // --- yetki kontrolü (ortak) ---
 async function requireAdmin() {
@@ -119,7 +119,7 @@ export default async function AdminPage() {
         </Section>
 
         <MemberSection title={`Aile (${aile.length})`} members={aile} />
-        <MemberSection title={`QuitGang (${quitgang.length})`} members={quitgang} />
+        <MemberSection title={`Gang (${quitgang.length})`} members={quitgang} />
       </div>
     </main>
   );

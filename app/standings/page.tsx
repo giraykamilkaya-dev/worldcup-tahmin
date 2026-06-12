@@ -21,9 +21,9 @@ export default async function StandingsPage() {
   // Admin'sek gruplara ayır; değilsek tek tablo (zaten kendi grubu gelir)
   const groups = isAdmin
     ? [
-        { no: 1, name: "Aile", rows: standings.filter((r) => r.group_no === 1) },
-        { no: 2, name: "QuitGang", rows: standings.filter((r) => r.group_no === 2) },
-      ].filter((g) => g.rows.length > 0)
+      { no: 1, name: "Aile", rows: standings.filter((r) => r.group_no === 1) },
+      { no: 2, name: "Gang", rows: standings.filter((r) => r.group_no === 2) },
+    ].filter((g) => g.rows.length > 0)
     : [{ no: 0, name: "", rows: standings }];
 
   return (
@@ -71,9 +71,8 @@ function StandingsTable({ rows, meId }: { rows: StandingRow[]; meId: string }) {
           {rows.map((r, i) => (
             <tr
               key={r.user_id}
-              className={`border-t border-line ${
-                r.user_id === meId ? "bg-gold/5" : ""
-              }`}
+              className={`border-t border-line ${r.user_id === meId ? "bg-gold/5" : ""
+                }`}
             >
               <td className="px-4 py-3 font-display text-lg">
                 {medals[i] ?? i + 1}
