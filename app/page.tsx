@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
-import MatchCard from "@/components/MatchCard";
 import ChampionPicker from "@/components/ChampionPicker";
+import MatchTabs from "@/components/MatchTabs";
 import type { Match, Prediction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +34,10 @@ export default async function HomePage() {
   const { data: teamRows } = await supabase.rpc("get_teams");
   const teams = (teamRows ?? []).map((t: { team: string }) => t.team);
 
-  const predByMatch = new Map<number, Prediction>();
-  (preds ?? []).forEach((p) => predByMatch.set(p.match_id, p as Prediction));
+  const predByMatch: Record<number, Prediction> = {};
+  (preds ?? []).forEach((p) => {
+    predByMatch[p.match_id] = p as Prediction;
+  });
 
   const all = (matches ?? []) as Match[];
   const open = all.filter((m) => m.status !== "FINISHED");
@@ -47,7 +49,7 @@ export default async function HomePage() {
   const TBD = (t: string | null) => !t || t === "TBD";
   const predictable = all.filter((m) => !TBD(m.home_team) && !TBD(m.away_team));
   const totalMatches = predictable.length;
-  const predictedCount = predictable.filter((m) => predByMatch.has(m.id)).length;
+  const predictedCount = predictable.filter((m) => predByMatch[m.id]).length;
   const pct = totalMatches > 0 ? Math.round((predictedCount / totalMatches) * 100) : 0;
 
   return (
@@ -97,36 +99,12 @@ export default async function HomePage() {
           />
         )}
 
-        {all.length === 0 && (
+        {all.length === 0 ? (
           <div className="rounded-2xl border border-line bg-pitch-deep/60 p-6 text-center text-cream/60">
             Henüz maç yüklenmedi. Yönetici skor senkronunu çalıştırdığında maçlar burada belirir.
           </div>
-        )}
-
-        {open.length > 0 && (
-          <section className="mb-8">
-            <h2 className="mb-3 font-display text-lg uppercase tracking-wide text-gold">
-              Oynanacak maçlar
-            </h2>
-            <div className="space-y-3">
-              {open.map((m) => (
-                <MatchCard key={m.id} match={m} prediction={predByMatch.get(m.id) ?? null} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {done.length > 0 && (
-          <section>
-            <h2 className="mb-3 font-display text-lg uppercase tracking-wide text-cream/50">
-              Sonuçlananlar
-            </h2>
-            <div className="space-y-3">
-              {done.map((m) => (
-                <MatchCard key={m.id} match={m} prediction={predByMatch.get(m.id) ?? null} />
-              ))}
-            </div>
-          </section>
+        ) : (
+          <MatchTabs open={open} done={done} predByMatch={predByMatch} />
         )}
       </div>
     </main>
