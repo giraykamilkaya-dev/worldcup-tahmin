@@ -36,18 +36,15 @@ export async function GET(request: Request) {
   const lockedIds = new Set((lockedRows ?? []).map((r) => r.id));
 
   if (matches.length) {
-    // Kilitli maçların skor/durumunu football-data'dan gelenle EZME.
-    // Kilitli maçlar için sadece zararsız alanları (takım, arma, tarih) güncelle.
-    const toUpsert = matches.map((m) => {
-      if (!lockedIds.has(m.id)) return m;
-      // Kilitli: skor, durum ve kazananı DB'deki elle düzeltilmiş haliyle bırak
-      const { home_score, away_score, status, winner, ...safe } = m;
-      return safe;
-    });
+    // Kilitli maçları upsert'e hiç dahil etme — DB'deki elle düzeltilmiş
+    // skor/durum aynen korunur, football-data ezemez.
+    const toUpsert = matches.filter((m) => !lockedIds.has(m.id));
 
-    const { error } = await admin.from("matches").upsert(toUpsert, { onConflict: "id" });
-    if (error)
-      return NextResponse.json({ error: "Maç yazma hatası: " + error.message }, { status: 500 });
+    if (toUpsert.length) {
+      const { error } = await admin.from("matches").upsert(toUpsert, { onConflict: "id" });
+      if (error)
+        return NextResponse.json({ error: "Maç yazma hatası: " + error.message }, { status: 500 });
+    }
   }
 
   // 2) Biten maçların henüz puanlanmamış tahminlerini hesapla
