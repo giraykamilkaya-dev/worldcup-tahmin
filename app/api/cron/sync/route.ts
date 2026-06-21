@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
-  // 1) Tüm Dünya Kupası maçlarını çek ve upsert et (yeni turlar otomatik gelir)
+  // 1) Tüm Dünya Kupası maçlarını çek
   let matches;
   try {
     matches = await fetchWorldCupMatches();
@@ -28,8 +28,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Maç çekme hatası: " + e.message }, { status: 502 });
   }
 
+  // Skoru elle kilitlenmiş maçları öğren (football-data yanlış skor verirse koruruz)
+  const { data: lockedRows } = await admin
+    .from("matches")
+    .select("id")
+    .eq("score_locked", true);
+  const lockedIds = new Set((lockedRows ?? []).map((r) => r.id));
+
   if (matches.length) {
-    const { error } = await admin.from("matches").upsert(matches, { onConflict: "id" });
+    // Kilitli maçların skor/durumunu football-data'dan gelenle EZME.
+    // Kilitli maçlar için sadece zararsız alanları (takım, arma, tarih) güncelle.
+    const toUpsert = matches.map((m) => {
+      if (!lockedIds.has(m.id)) return m;
+      // Kilitli: skor, durum ve kazananı DB'deki elle düzeltilmiş haliyle bırak
+      const { home_score, away_score, status, winner, ...safe } = m;
+      return safe;
+    });
+
+    const { error } = await admin.from("matches").upsert(toUpsert, { onConflict: "id" });
     if (error)
       return NextResponse.json({ error: "Maç yazma hatası: " + error.message }, { status: 500 });
   }
@@ -60,6 +76,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     matches_synced: matches.length,
+    locked_protected: lockedIds.size,
     finished_matches: finished?.length ?? 0,
     predictions_scored: scoredPredictions,
     at: new Date().toISOString(),
