@@ -11,15 +11,18 @@ export default async function StandingsPage() {
   } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, show_in_both")
     .eq("id", user!.id)
     .single();
   const { data: rows } = await supabase.rpc("get_standings");
   const standings = (rows ?? []) as StandingRow[];
   const isAdmin = profile?.is_admin === true;
+  const showInBoth = profile?.show_in_both === true;
 
-  // Admin'sek gruplara ayır; değilsek tek tablo (zaten kendi grubu gelir)
-  const groups = isAdmin
+  // Admin veya iki grupta yarışan kişi gruplara ayrılmış görür;
+  // diğerleri tek tablo (zaten kendi grubu gelir).
+  const seesBoth = isAdmin || showInBoth;
+  const groups = seesBoth
     ? [
       { no: 1, name: "Aile", rows: standings.filter((r) => r.group_no === 1) },
       { no: 2, name: "Gang", rows: standings.filter((r) => r.group_no === 2) },
