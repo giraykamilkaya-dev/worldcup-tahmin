@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Tahmin kaydet/güncelle. Kilit kontrolü BURADA (sunucuda) yapılır:
-// maç başlama saati geçtiyse tahmin kabul edilmez. Baypas edilemez.
+// maç başlama saati geçtiyse veya takımlar belli değilse tahmin kabul edilmez.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -45,14 +45,23 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  // Maçı al, başlama saatini doğrula
+  // Maçı al, başlama saatini ve takımları doğrula
   const { data: match, error: matchErr } = await admin
     .from("matches")
-    .select("id, utc_date, status")
+    .select("id, utc_date, status, home_team, away_team")
     .eq("id", matchId)
     .single();
   if (matchErr || !match)
     return NextResponse.json({ error: "Maç bulunamadı" }, { status: 404 });
+
+  // Takımlar henüz belli değilse tahmin alınmaz (eleme turu TBD maçları)
+  const isTBD = (t: string | null) => !t || t === "TBD";
+  if (isTBD(match.home_team) || isTBD(match.away_team)) {
+    return NextResponse.json(
+      { error: "Takımlar henüz belli değil" },
+      { status: 422 }
+    );
+  }
 
   // KİLİT: başlama saati geçtiyse tahmine izin yok
   if (new Date(match.utc_date).getTime() <= Date.now()) {

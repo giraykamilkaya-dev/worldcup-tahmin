@@ -40,7 +40,12 @@ export default function MatchCard({
   match: Match;
   prediction: Prediction | null;
 }) {
-  const locked = new Date(match.utc_date).getTime() <= Date.now();
+  // Takımlar belli değilse (eleme turu TBD/null) tahmin alınmaz
+  const isTBD = (t: string | null) => !t || t === "TBD";
+  const teamsUnknown = isTBD(match.home_team) || isTBD(match.away_team);
+
+  const locked =
+    teamsUnknown || new Date(match.utc_date).getTime() <= Date.now();
   const finished = match.status === "FINISHED";
   const isTurkey = match.home_team === TURKEY || match.away_team === TURKEY;
 
@@ -149,6 +154,8 @@ export default function MatchCard({
                 </span>
               )}
             </span>
+          ) : teamsUnknown ? (
+            <span className="text-cream/40">Takımlar belli değil</span>
           ) : live ? (
             <span className="flex items-center gap-6">
               <span className="text-tr-red/80">🔒 Tahmin kapandı.</span>
