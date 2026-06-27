@@ -47,7 +47,10 @@ export async function GET(request: Request) {
     }
   }
 
-  // 2) Biten maçların henüz puanlanmamış tahminlerini hesapla
+  // 2) Biten maçların TÜM tahminlerini gerçek skora göre yeniden hesapla.
+  // Sadece points=null olanları değil, hepsini; çünkü football-data maç
+  // sırasında yanlış/ara skor verip puanı bozmuş olabilir. Her turda doğru
+  // skora göre yeniden hesaplayınca yanlışlar kendiliğinden düzelir.
   const { data: finished } = await admin
     .from("matches")
     .select("id, home_score, away_score")
@@ -59,14 +62,16 @@ export async function GET(request: Request) {
 
     const { data: preds } = await admin
       .from("predictions")
-      .select("id, home_pred, away_pred")
-      .eq("match_id", m.id)
-      .is("points", null);
+      .select("id, home_pred, away_pred, points")
+      .eq("match_id", m.id);
 
     for (const p of preds ?? []) {
-      const pts = calcPoints(p.home_pred, p.away_pred, m.home_score, m.away_score);
-      await admin.from("predictions").update({ points: pts }).eq("id", p.id);
-      scoredPredictions++;
+      const correct = calcPoints(p.home_pred, p.away_pred, m.home_score, m.away_score);
+      // Sadece yanlışsa güncelle (gereksiz yazma yapma)
+      if (p.points !== correct) {
+        await admin.from("predictions").update({ points: correct }).eq("id", p.id);
+        scoredPredictions++;
+      }
     }
   }
 
@@ -75,7 +80,7 @@ export async function GET(request: Request) {
     matches_synced: matches.length,
     locked_protected: lockedIds.size,
     finished_matches: finished?.length ?? 0,
-    predictions_scored: scoredPredictions,
+    predictions_corrected: scoredPredictions,
     at: new Date().toISOString(),
   });
 }
