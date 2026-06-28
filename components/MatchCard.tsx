@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { Match, Prediction } from "@/lib/types";
 import { teamTR, TURKEY } from "@/lib/teams";
+import { isKnockout } from "@/lib/scoring";
 
 const STAGE_TR: Record<string, string> = {
   GROUP_STAGE: "Grup",
@@ -62,9 +63,17 @@ export default function MatchCard({
   const [away, setAway] = useState<string>(
     prediction ? String(prediction.away_pred) : ""
   );
+  const [advancePick, setAdvancePick] = useState<string | null>(
+    prediction?.advance_pick ?? null
+  );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [hasPrediction, setHasPrediction] = useState<boolean>(!!prediction);
+
+  // Eleme turu + girilen skor beraberlik mi? → tur atlayan takım seçimi açılır
+  const knockout = isKnockout(match.stage);
+  const isDrawPred = home !== "" && away !== "" && home === away;
+  const showAdvancePicker = knockout && isDrawPred && !locked;
 
   async function save() {
     if (home === "" || away === "") {
@@ -73,6 +82,8 @@ export default function MatchCard({
     }
     setSaving(true);
     setMsg(null);
+    // Beraberlik değilse veya eleme turu değilse advance_pick gönderme
+    const pickToSend = knockout && home === away ? advancePick : null;
     const res = await fetch("/api/predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -80,6 +91,7 @@ export default function MatchCard({
         match_id: match.id,
         home_pred: Number(home),
         away_pred: Number(away),
+        advance_pick: pickToSend,
       }),
     });
     setSaving(false);
@@ -142,6 +154,27 @@ export default function MatchCard({
         </div>
       </div>
 
+      {/* Tur atlama bonusu — eleme turunda beraberlik tahmin edilince açılır */}
+      {showAdvancePicker && (
+        <div className="mt-3 rounded-xl border border-gold/30 bg-gold/5 p-3">
+          <div className="mb-2 text-xs text-gold">
+            ⚽ Beraberlik dedin — penaltılarda turu kim geçer? (doğru bilirsen +1 bonus)
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <AdvanceBtn
+              label={teamTR(match.home_team)}
+              active={advancePick === "HOME"}
+              onClick={() => setAdvancePick(advancePick === "HOME" ? null : "HOME")}
+            />
+            <AdvanceBtn
+              label={teamTR(match.away_team)}
+              active={advancePick === "AWAY"}
+              onClick={() => setAdvancePick(advancePick === "AWAY" ? null : "AWAY")}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Alt satır */}
       <div className="mt-3 flex min-h-[28px] items-center justify-between gap-2">
         <div className="text-xs text-cream/50">
@@ -153,6 +186,11 @@ export default function MatchCard({
                   +{pts} puan
                 </span>
               )}
+              {prediction?.bonus ? (
+                <span className="ml-1 rounded-full bg-tr-red/20 px-2 py-0.5 font-600 text-tr-red">
+                  🎯 +1 tur bonusu
+                </span>
+              ) : null}
             </span>
           ) : teamsUnknown ? (
             <span className="text-cream/40">Takımlar belli değil</span>
@@ -169,6 +207,16 @@ export default function MatchCard({
           ) : prediction ? (
             <span>
               Tahminin: {prediction.home_pred} - {prediction.away_pred}
+              {prediction.advance_pick && prediction.home_pred === prediction.away_pred && (
+                <span className="ml-1 text-gold">
+                  · tur:{" "}
+                  {teamTR(
+                    prediction.advance_pick === "HOME"
+                      ? match.home_team
+                      : match.away_team
+                  )}
+                </span>
+              )}
             </span>
           ) : (
             <span>Tahminini gir</span>
@@ -187,6 +235,29 @@ export default function MatchCard({
         {msg && <span className="text-xs text-gold">{msg}</span>}
       </div>
     </div>
+  );
+}
+
+function AdvanceBtn({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg border px-3 py-2 font-display text-sm font-600 uppercase tracking-wide transition ${active
+          ? "border-gold bg-gold/20 text-gold"
+          : "border-line bg-pitch text-cream/70 hover:border-gold/50"
+        }`}
+    >
+      {label}
+    </button>
   );
 }
 

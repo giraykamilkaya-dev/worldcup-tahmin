@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchWorldCupMatches } from "@/lib/footballData";
-import { calcPoints } from "@/lib/scoring";
+import { calcPoints, calcBonus, isKnockout } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -76,9 +76,10 @@ export async function GET(request: Request) {
   // Sadece points=null olanları değil, hepsini; çünkü football-data maç
   // sırasında yanlış/ara skor verip puanı bozmuş olabilir. Her turda doğru
   // skora göre yeniden hesaplayınca yanlışlar kendiliğinden düzelir.
+  // Eleme turunda beraberlik + tur atlama bonusu da burada eklenir.
   const { data: finished } = await admin
     .from("matches")
-    .select("id, home_score, away_score")
+    .select("id, stage, home_score, away_score, winner")
     .eq("status", "FINISHED");
 
   let scoredPredictions = 0;
@@ -87,14 +88,30 @@ export async function GET(request: Request) {
 
     const { data: preds } = await admin
       .from("predictions")
-      .select("id, home_pred, away_pred, points")
+      .select("id, home_pred, away_pred, points, advance_pick, bonus")
       .eq("match_id", m.id);
 
     for (const p of preds ?? []) {
-      const correct = calcPoints(p.home_pred, p.away_pred, m.home_score, m.away_score);
-      // Sadece yanlışsa güncelle (gereksiz yazma yapma)
-      if (p.points !== correct) {
-        await admin.from("predictions").update({ points: correct }).eq("id", p.id);
+      const base = calcPoints(p.home_pred, p.away_pred, m.home_score, m.away_score);
+      // Bonus sadece eleme turlarında ve oyuncu beraberlik dediğinde geçerli
+      const bonus = isKnockout(m.stage)
+        ? calcBonus(
+          p.advance_pick ?? null,
+          p.home_pred,
+          p.away_pred,
+          m.home_score,
+          m.away_score,
+          m.winner ?? null
+        )
+        : 0;
+      const total = base + bonus;
+      // points'e bonus dahil (puan tablosu points'i topluyor); bonus'u ayrıca
+      // sakla ki ekranda "+1 bonus" gösterebilelim.
+      if (p.points !== total || (p.bonus ?? 0) !== bonus) {
+        await admin
+          .from("predictions")
+          .update({ points: total, bonus })
+          .eq("id", p.id);
         scoredPredictions++;
       }
     }

@@ -20,6 +20,8 @@ export type Prediction = {
   home_pred: number;
   away_pred: number;
   points: number | null;
+  advance_pick?: string | null; // "HOME" | "AWAY" | null — eleme turunda beraberlikte tur atlayan
+  bonus?: number | null;        // tur atlama bonusu (0/1)
 };
 
 export type Profile = {

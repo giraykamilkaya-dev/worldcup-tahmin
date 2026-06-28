@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isKnockout } from "@/lib/scoring";
 
 // Tahmin kaydet/güncelle. Kilit kontrolü BURADA (sunucuda) yapılır:
 // maç başlama saati geçtiyse veya takımlar belli değilse tahmin kabul edilmez.
@@ -20,7 +21,12 @@ export async function POST(request: Request) {
   if (!profile?.approved)
     return NextResponse.json({ error: "Hesabın henüz onaylı değil" }, { status: 403 });
 
-  let body: { match_id?: number; home_pred?: number; away_pred?: number };
+  let body: {
+    match_id?: number;
+    home_pred?: number;
+    away_pred?: number;
+    advance_pick?: string | null;
+  };
   try {
     body = await request.json();
   } catch {
@@ -30,6 +36,11 @@ export async function POST(request: Request) {
   const matchId = Number(body.match_id);
   const homePred = Number(body.home_pred);
   const awayPred = Number(body.away_pred);
+  // advance_pick yalnızca "HOME" / "AWAY" / null olabilir
+  let advancePick: string | null = null;
+  if (body.advance_pick === "HOME" || body.advance_pick === "AWAY") {
+    advancePick = body.advance_pick;
+  }
 
   if (!Number.isInteger(matchId))
     return NextResponse.json({ error: "Maç bulunamadı" }, { status: 400 });
@@ -48,7 +59,7 @@ export async function POST(request: Request) {
   // Maçı al, başlama saatini ve takımları doğrula
   const { data: match, error: matchErr } = await admin
     .from("matches")
-    .select("id, utc_date, status, home_team, away_team")
+    .select("id, utc_date, status, home_team, away_team, stage")
     .eq("id", matchId)
     .single();
   if (matchErr || !match)
@@ -71,6 +82,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // advance_pick sadece ELEME turunda ve BERABERLİK tahmininde anlamlı.
+  // Diğer durumlarda null'a çekilir (yanlış veri tutmayalım).
+  if (!isKnockout(match.stage) || homePred !== awayPred) {
+    advancePick = null;
+  }
+
   // Upsert (kullanıcı + maç tekil)
   const { error: upErr } = await admin.from("predictions").upsert(
     {
@@ -78,6 +95,7 @@ export async function POST(request: Request) {
       match_id: matchId,
       home_pred: homePred,
       away_pred: awayPred,
+      advance_pick: advancePick,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,match_id" }
