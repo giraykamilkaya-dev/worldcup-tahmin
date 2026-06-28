@@ -64,6 +64,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Mobil tarayıcılar (özellikle iOS Safari) HTML sayfalarını agresif
+  // cache'liyor; refresh atılsa bile günler önceki hali kalabiliyor.
+  // Statik varlıklar hariç (_next/static, görseller) tüm sayfalara
+  // "cache'leme" talimatı veriyoruz ki her açılışta taze veri gelsin.
+  const isAsset =
+    path.startsWith("/_next/") ||
+    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$/.test(path);
+  if (!isAsset) {
+    response.headers.set("Cache-Control", "no-store, must-revalidate");
+  }
+
   return response;
 }
 

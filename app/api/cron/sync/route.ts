@@ -28,17 +28,42 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Maç çekme hatası: " + e.message }, { status: 502 });
   }
 
-  // Skoru elle kilitlenmiş maçları öğren (football-data yanlış skor verirse koruruz)
-  const { data: lockedRows } = await admin
+  // Mevcut DB satırlarını çek — football-data bir alanı null verdiğinde
+  // DB'deki dolu değeri korumak için (eleme turlarında takım isimleri
+  // bazen API'de geçici null gelip ekrandaki maçı "belirsiz"e döndürüyordu).
+  const { data: existingRows } = await admin
     .from("matches")
-    .select("id")
-    .eq("score_locked", true);
-  const lockedIds = new Set((lockedRows ?? []).map((r) => r.id));
+    .select("id, stage, group_name, home_team, home_crest, away_team, away_crest, home_score, away_score, winner, score_locked");
+  const existingById = new Map((existingRows ?? []).map((r) => [r.id, r]));
+  const lockedIds = new Set(
+    (existingRows ?? []).filter((r) => r.score_locked === true).map((r) => r.id)
+  );
+
+  // API null verince eskisini koru; dolu verince güncelle.
+  const keep = <T,>(incoming: T | null | undefined, current: T | null | undefined): T | null =>
+    incoming == null ? (current ?? null) : incoming;
 
   if (matches.length) {
     // Kilitli maçları upsert'e hiç dahil etme — DB'deki elle düzeltilmiş
     // skor/durum aynen korunur, football-data ezemez.
-    const toUpsert = matches.filter((m) => !lockedIds.has(m.id));
+    const toUpsert = matches
+      .filter((m) => !lockedIds.has(m.id))
+      .map((m) => {
+        const cur = existingById.get(m.id);
+        if (!cur) return m; // yeni maç, olduğu gibi yaz
+        return {
+          ...m,
+          // Takım/arma/skor alanları: API null verirse DB'deki doluyu koru
+          home_team: keep(m.home_team, cur.home_team),
+          home_crest: keep(m.home_crest, cur.home_crest),
+          away_team: keep(m.away_team, cur.away_team),
+          away_crest: keep(m.away_crest, cur.away_crest),
+          home_score: keep(m.home_score, cur.home_score),
+          away_score: keep(m.away_score, cur.away_score),
+          winner: keep(m.winner, cur.winner),
+          group_name: keep(m.group_name, cur.group_name),
+        };
+      });
 
     if (toUpsert.length) {
       const { error } = await admin.from("matches").upsert(toUpsert, { onConflict: "id" });
