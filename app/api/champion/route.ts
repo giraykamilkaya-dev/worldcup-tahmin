@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// Şampiyon tahmini bu tarihten sonra kilitlenir (TR saati 28 Haziran 00:00 = UTC 27 Haz 21:00)
-const LOCK_AT = new Date("2026-06-27T21:00:00Z");
+// Şampiyon tahmini bu tarihten sonra kilitlenir.
+// İlk Son 32 maçının başlangıcı: 28 Haziran 22:00 TR = 28 Haziran 19:00 UTC
+const LOCK_AT = new Date("2026-06-28T19:00:00Z");
 
 export async function POST(request: Request) {
   const supabase = await createClient();

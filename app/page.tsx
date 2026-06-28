@@ -7,8 +7,8 @@ import type { Match, Prediction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-// Şampiyon tahmini kilidi (TR 28 Haziran 00:00 = UTC 27 Haz 21:00) — route ile aynı olmalı
-const CHAMPION_LOCK_AT = new Date("2026-06-27T21:00:00Z");
+// Şampiyon tahmini kilidi — ilk Son 32 maçı: 28 Haz 22:00 TR = 28 Haz 19:00 UTC — route ile aynı olmalı
+const CHAMPION_LOCK_AT = new Date("2026-06-28T19:00:00Z");
 
 export default async function HomePage() {
   const supabase = await createClient();
