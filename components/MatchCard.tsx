@@ -154,6 +154,13 @@ export default function MatchCard({
         </div>
       </div>
 
+      {/* Eleme turu bilgi notu — skorun hangi süreyi kapsadığını netleştirir */}
+      {knockout && (
+        <p className="mt-2 text-center text-xs text-cream/40">
+          Skor tahminin oynanan süre içindir: 90 dk, uzatma olursa 120 dk. (Penaltı hariç)
+        </p>
+      )}
+
       {/* Tur atlama bonusu — eleme turunda beraberlik tahmin edilince açılır */}
       {showAdvancePicker && (
         <div className="mt-3 rounded-xl border border-gold/30 bg-gold/5 p-3">
