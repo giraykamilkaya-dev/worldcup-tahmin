@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   // bazen API'de geçici null gelip ekrandaki maçı "belirsiz"e döndürüyordu).
   const { data: existingRows } = await admin
     .from("matches")
-    .select("id, stage, group_name, home_team, home_crest, away_team, away_crest, home_score, away_score, winner, score_locked");
+    .select("id, stage, group_name, home_team, home_crest, away_team, away_crest, home_score, away_score, pen_home, pen_away, winner, score_locked");
   const existingById = new Map((existingRows ?? []).map((r) => [r.id, r]));
   const lockedIds = new Set(
     (existingRows ?? []).filter((r) => r.score_locked === true).map((r) => r.id)
@@ -60,6 +60,8 @@ export async function GET(request: Request) {
           away_crest: keep(m.away_crest, cur.away_crest),
           home_score: keep(m.home_score, cur.home_score),
           away_score: keep(m.away_score, cur.away_score),
+          pen_home: keep(m.pen_home, cur.pen_home),
+          pen_away: keep(m.pen_away, cur.pen_away),
           winner: keep(m.winner, cur.winner),
           group_name: keep(m.group_name, cur.group_name),
         };

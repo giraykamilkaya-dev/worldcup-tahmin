@@ -10,6 +10,8 @@ export type Match = {
   away_crest: string | null;
   home_score: number | null;
   away_score: number | null;
+  pen_home: number | null;
+  pen_away: number | null;
   winner: string | null;
 };
 

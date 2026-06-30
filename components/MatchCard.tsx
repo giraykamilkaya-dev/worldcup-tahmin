@@ -188,6 +188,9 @@ export default function MatchCard({
           {finished && match.home_score != null ? (
             <span>
               Sonuç: <b className="text-cream">{match.home_score} - {match.away_score}</b>
+              {match.pen_home != null && match.pen_away != null && (
+                <b className="text-cream/70"> (Pen {match.pen_home}-{match.pen_away})</b>
+              )}
               {pts != null && (
                 <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 font-600 text-gold">
                   +{pts} puan
