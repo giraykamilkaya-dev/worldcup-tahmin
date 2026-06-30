@@ -186,21 +186,58 @@ export default function MatchCard({
       <div className="mt-3 flex min-h-[28px] items-center justify-between gap-2">
         <div className="text-xs text-cream/50">
           {finished && match.home_score != null ? (
-            <span>
-              Sonuç: <b className="text-cream">{match.home_score} - {match.away_score}</b>
-              {match.pen_home != null && match.pen_away != null && (
-                <b className="text-cream/70"> (Pen {match.pen_home}-{match.pen_away})</b>
-              )}
-              {pts != null && (
-                <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 font-600 text-gold">
-                  +{pts} puan
-                </span>
-              )}
-              {prediction?.bonus ? (
-                <span className="ml-1 rounded-full bg-tr-red/20 px-2 py-0.5 font-600 text-tr-red">
-                  🎯 +1 tur bonusu
-                </span>
-              ) : null}
+            <span className="flex flex-col gap-1">
+              <span>
+                Sonuç: <b className="text-cream">{match.home_score} - {match.away_score}</b>
+                {match.pen_home != null && match.pen_away != null && (
+                  <b className="text-cream/70"> (Pen {match.pen_home}-{match.pen_away})</b>
+                )}
+                {pts != null && (
+                  <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 font-600 text-gold">
+                    +{pts} puan
+                  </span>
+                )}
+                {prediction?.bonus ? (
+                  <span className="ml-1 rounded-full bg-tr-red/20 px-2 py-0.5 font-600 text-tr-red">
+                    🎯 +1 tur bonusu
+                  </span>
+                ) : null}
+              </span>
+              {/* Oyuncu penaltıda tur atlayan seçtiyse: doğru/yanlış göster */}
+              {prediction?.advance_pick &&
+                (() => {
+                  const pickedTeam = teamTR(
+                    prediction.advance_pick === "HOME"
+                      ? match.home_team
+                      : match.away_team
+                  );
+                  const winnerSide =
+                    match.winner === "HOME_TEAM"
+                      ? "HOME"
+                      : match.winner === "AWAY_TEAM"
+                        ? "AWAY"
+                        : null;
+                  // Bonus gerçekten kazanıldı mı? (beraberlik + doğru takım)
+                  const correct = !!prediction.bonus;
+                  // Penaltıya gitmediyse (winnerSide yok ya da maç berabere
+                  // bitmediyse) tahmin "geçersiz" sayılır, nötr gösterilir
+                  const wentToPens = match.pen_home != null && match.pen_away != null;
+                  return (
+                    <span className="text-cream/50">
+                      Penaltı tahminin:{" "}
+                      <b className="text-cream/70">{pickedTeam}</b>{" "}
+                      {wentToPens ? (
+                        correct ? (
+                          <span className="text-gold">✓ doğru</span>
+                        ) : (
+                          <span className="text-tr-red/70">✗ yanlış</span>
+                        )
+                      ) : (
+                        <span className="text-cream/40">— penaltıya gitmedi</span>
+                      )}
+                    </span>
+                  );
+                })()}
             </span>
           ) : teamsUnknown ? (
             <span className="text-cream/40">Takımlar belli değil</span>
