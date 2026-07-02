@@ -172,7 +172,7 @@ export default function MatchCard({
       {showAdvancePicker && (
         <div className="mt-3 rounded-xl border border-gold/30 bg-gold/5 p-3">
           <div className="mb-2 text-xs text-gold">
-            ⚽ Beraberlik dedin — penaltılarda turu kim geçer? (doğru bilirsen +1 bonus)
+            ⚽ Beraberlik dedin — penaltılarda turu kim geçer? (Bilirsen +1 puan)
           </div>
           <div className="grid grid-cols-2 gap-2">
             <AdvanceBtn
@@ -262,8 +262,8 @@ export default function MatchCard({
             <span>
               Tahminin: {prediction.home_pred} - {prediction.away_pred}
               {prediction.advance_pick && prediction.home_pred === prediction.away_pred && (
-                <span className="ml-1 text-gold">
-                  · tur:{" "}
+                <span className="ml-1">
+                  · Tur:{" "}
                   {teamTR(
                     prediction.advance_pick === "HOME"
                       ? match.home_team
