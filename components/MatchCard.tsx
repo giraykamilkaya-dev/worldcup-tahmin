@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import type { Match, Prediction } from "@/lib/types";
 import { teamTR, TURKEY } from "@/lib/teams";
 import { isKnockout } from "@/lib/scoring";
@@ -317,16 +317,6 @@ function AdvanceBtn({
 
 // Mobil için klavyesiz +/− skor girişi.
 // Dokununca iOS klavyesi açılmaz; parmakla artır/azalt.
-// Mobil için iOS tarzı dikey "wheel" skor seçici (takvim yıl seçici gibi).
-// Klavye açılmaz; parmakla yukarı-aşağı kaydırıp ortadaki değeri seçersin.
-// Listenin başında "boş" (–) var: tahmin yok ile 0 skorunu ayırt etmek için.
-const ITEM_H = 44; // her rakamın piksel yüksekliği (CSS ile eşleşmeli)
-const MAX_SCORE = 15;
-
-// indeks 0 = boş("–"), indeks i = skor (i-1)
-const idxToValue = (idx: number) => (idx <= 0 ? "" : String(idx - 1));
-const valueToIdx = (v: string) => (v === "" ? 0 : Number(v) + 1);
-
 function MobileScore({
   value,
   onChange,
@@ -336,67 +326,38 @@ function MobileScore({
   onChange: (v: string) => void;
   disabled: boolean;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [active, setActive] = useState<number>(valueToIdx(value));
-
-  // Dışarıdan gelen değer değişince doğru konuma git (kullanıcı kaydırmıyorken)
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const idx = valueToIdx(value);
-    setActive(idx);
-    el.scrollTop = idx * ITEM_H;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-
-  function onScroll() {
-    const el = ref.current;
-    if (!el) return;
-    const idx = Math.round(el.scrollTop / ITEM_H);
-    if (idx !== active) setActive(idx);
-    // Kaydırma bitişini yakala (scrollend her tarayıcıda yok → timeout yedek)
-    if (settleTimer.current) clearTimeout(settleTimer.current);
-    settleTimer.current = setTimeout(settle, 90);
-  }
-
-  function settle() {
-    const el = ref.current;
-    if (!el) return;
-    let idx = Math.round(el.scrollTop / ITEM_H);
-    if (idx < 0) idx = 0;
-    if (idx > MAX_SCORE + 1) idx = MAX_SCORE + 1;
-    el.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
-    setActive(idx);
-    onChange(idxToValue(idx));
-  }
-
-  // [boş, 0, 1, ... MAX_SCORE]
-  const items = ["–", ...Array.from({ length: MAX_SCORE + 1 }, (_, i) => String(i))];
+  const num = value === "" ? null : Number(value);
+  const set = (n: number) => {
+    if (n < 0) n = 0;
+    if (n > 20) n = 20;
+    onChange(String(n));
+  };
+  const inc = () => set((num ?? -1) + 1); // boşsa ilk artış 0 olur
+  const dec = () => set((num ?? 1) - 1); // boşsa ilk azalış 0 olur
 
   return (
-    <div className="relative h-[88px] w-14">
-      {/* Seçim bandı — üstteki satır (seçili değer burada durur) */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[44px] rounded-md border border-gold/40" />
-      <div
-        ref={ref}
-        onScroll={disabled ? undefined : onScroll}
-        className={`scrollbar-none h-full snap-y snap-mandatory overflow-y-auto rounded-xl border border-line bg-pitch ${disabled ? "pointer-events-none opacity-70" : ""
-          }`}
+    <div className="flex flex-col items-center gap-1">
+      <button
+        type="button"
+        onClick={inc}
+        disabled={disabled}
+        aria-label="Artır"
+        className="flex h-9 w-14 items-center justify-center rounded-lg border border-line bg-pitch text-xl font-700 text-cream/70 transition active:scale-95 active:border-gold active:text-gold disabled:opacity-40"
       >
-        {items.map((label, i) => (
-          <div
-            key={i}
-            className={`flex snap-start items-center justify-center font-display font-700 transition-all ${i === active ? "text-2xl text-gold" : "text-base text-cream/30"
-              }`}
-            style={{ height: ITEM_H }}
-          >
-            {label}
-          </div>
-        ))}
-        {/* alt boşluk — son değer üst banda gelebilsin diye */}
-        <div style={{ height: ITEM_H }} />
+        +
+      </button>
+      <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-line bg-pitch font-display text-3xl font-700 text-gold">
+        {value === "" ? "–" : value}
       </div>
+      <button
+        type="button"
+        onClick={dec}
+        disabled={disabled}
+        aria-label="Azalt"
+        className="flex h-9 w-14 items-center justify-center rounded-lg border border-line bg-pitch text-xl font-700 text-cream/70 transition active:scale-95 active:border-gold active:text-gold disabled:opacity-40"
+      >
+        −
+      </button>
     </div>
   );
 }
