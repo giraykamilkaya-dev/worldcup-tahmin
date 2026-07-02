@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Match, Prediction } from "@/lib/types";
 import { teamTR, TURKEY } from "@/lib/teams";
 import { isKnockout } from "@/lib/scoring";
@@ -139,10 +139,17 @@ export default function MatchCard({
         </div>
 
         {/* Skor kutusu — her zaman kişinin tahminini gösterir */}
-        <div className="scorebox flex items-center gap-1">
+        {/* Laptop/PC: klasik input (klavye ile hızlı) */}
+        <div className="scorebox hidden items-center gap-1 md:flex">
           <ScoreInput value={home} onChange={setHome} disabled={locked} />
           <span className="px-1 font-display text-cream/40">:</span>
           <ScoreInput value={away} onChange={setAway} disabled={locked} />
+        </div>
+        {/* Mobil: klavyesiz +/− stepper */}
+        <div className="scorebox flex items-center gap-2 md:hidden">
+          <MobileScore value={home} onChange={setHome} disabled={locked} />
+          <span className="px-0.5 font-display text-cream/40">:</span>
+          <MobileScore value={away} onChange={setAway} disabled={locked} />
         </div>
 
         {/* Deplasman */}
@@ -298,13 +305,99 @@ function AdvanceBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-3 py-2 font-display text-sm font-600 uppercase tracking-wide transition ${active
+      className={`rounded-lg border px-3 py-3 font-display text-sm font-600 uppercase tracking-wide transition active:scale-95 sm:py-2 ${active
           ? "border-gold bg-gold/20 text-gold"
-          : "border-line bg-pitch text-cream/70 hover:border-gold/50"
+          : "border-line bg-pitch text-cream/70 hover:border-gold/50 active:border-gold/50"
         }`}
     >
       {label}
     </button>
+  );
+}
+
+// Mobil için klavyesiz +/− skor girişi.
+// Dokununca iOS klavyesi açılmaz; parmakla artır/azalt.
+// Mobil için iOS tarzı dikey "wheel" skor seçici (takvim yıl seçici gibi).
+// Klavye açılmaz; parmakla yukarı-aşağı kaydırıp ortadaki değeri seçersin.
+// Listenin başında "boş" (–) var: tahmin yok ile 0 skorunu ayırt etmek için.
+const ITEM_H = 44; // her rakamın piksel yüksekliği (CSS ile eşleşmeli)
+const MAX_SCORE = 15;
+
+// indeks 0 = boş("–"), indeks i = skor (i-1)
+const idxToValue = (idx: number) => (idx <= 0 ? "" : String(idx - 1));
+const valueToIdx = (v: string) => (v === "" ? 0 : Number(v) + 1);
+
+function MobileScore({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [active, setActive] = useState<number>(valueToIdx(value));
+
+  // Dışarıdan gelen değer değişince doğru konuma git (kullanıcı kaydırmıyorken)
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const idx = valueToIdx(value);
+    setActive(idx);
+    el.scrollTop = idx * ITEM_H;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  function onScroll() {
+    const el = ref.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollTop / ITEM_H);
+    if (idx !== active) setActive(idx);
+    // Kaydırma bitişini yakala (scrollend her tarayıcıda yok → timeout yedek)
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(settle, 90);
+  }
+
+  function settle() {
+    const el = ref.current;
+    if (!el) return;
+    let idx = Math.round(el.scrollTop / ITEM_H);
+    if (idx < 0) idx = 0;
+    if (idx > MAX_SCORE + 1) idx = MAX_SCORE + 1;
+    el.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
+    setActive(idx);
+    onChange(idxToValue(idx));
+  }
+
+  // [boş, 0, 1, ... MAX_SCORE]
+  const items = ["–", ...Array.from({ length: MAX_SCORE + 1 }, (_, i) => String(i))];
+
+  return (
+    <div className="relative h-[132px] w-16">
+      {/* Orta seçim bandı */}
+      <div className="pointer-events-none absolute inset-x-0 top-[44px] z-10 h-[44px] rounded-md border-y border-gold/40" />
+      <div
+        ref={ref}
+        onScroll={disabled ? undefined : onScroll}
+        className={`scrollbar-none h-full snap-y snap-mandatory overflow-y-auto rounded-xl border border-line bg-pitch ${disabled ? "pointer-events-none opacity-70" : ""
+          }`}
+      >
+        <div style={{ height: ITEM_H }} />
+        {items.map((label, i) => (
+          <div
+            key={i}
+            className={`flex snap-center items-center justify-center font-display font-700 transition-all ${i === active ? "text-2xl text-gold" : "text-lg text-cream/30"
+              }`}
+            style={{ height: ITEM_H }}
+          >
+            {label}
+          </div>
+        ))}
+        <div style={{ height: ITEM_H }} />
+      </div>
+    </div>
   );
 }
 
