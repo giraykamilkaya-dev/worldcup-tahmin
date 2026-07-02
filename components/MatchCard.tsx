@@ -375,26 +375,26 @@ function MobileScore({
   const items = ["–", ...Array.from({ length: MAX_SCORE + 1 }, (_, i) => String(i))];
 
   return (
-    <div className="relative h-[132px] w-16">
-      {/* Orta seçim bandı */}
-      <div className="pointer-events-none absolute inset-x-0 top-[44px] z-10 h-[44px] rounded-md border-y border-gold/40" />
+    <div className="relative h-[88px] w-14">
+      {/* Seçim bandı — üstteki satır (seçili değer burada durur) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[44px] rounded-md border border-gold/40" />
       <div
         ref={ref}
         onScroll={disabled ? undefined : onScroll}
         className={`scrollbar-none h-full snap-y snap-mandatory overflow-y-auto rounded-xl border border-line bg-pitch ${disabled ? "pointer-events-none opacity-70" : ""
           }`}
       >
-        <div style={{ height: ITEM_H }} />
         {items.map((label, i) => (
           <div
             key={i}
-            className={`flex snap-center items-center justify-center font-display font-700 transition-all ${i === active ? "text-2xl text-gold" : "text-lg text-cream/30"
+            className={`flex snap-start items-center justify-center font-display font-700 transition-all ${i === active ? "text-2xl text-gold" : "text-base text-cream/30"
               }`}
             style={{ height: ITEM_H }}
           >
             {label}
           </div>
         ))}
+        {/* alt boşluk — son değer üst banda gelebilsin diye */}
         <div style={{ height: ITEM_H }} />
       </div>
     </div>
