@@ -164,7 +164,7 @@ export default function MatchCard({
       {/* Eleme turu bilgi notu — skorun hangi süreyi kapsadığını netleştirir */}
       {knockout && (
         <p className="mt-2 text-center text-xs text-cream/40">
-          Skor tahminin oynanan süre içindir: 90 dk, uzatma olursa 120 dk. (Penaltı hariç)
+          Skor tahmini oynanan süre içindir: 90, uzatma olursa 120 dk. (Penaltı hariç)
         </p>
       )}
 
@@ -172,7 +172,7 @@ export default function MatchCard({
       {showAdvancePicker && (
         <div className="mt-3 rounded-xl border border-gold/30 bg-gold/5 p-3">
           <div className="mb-2 text-xs text-gold">
-            ⚽ Beraberlik dedin — penaltılarda turu kim geçer? (Bilirsen +1 puan)
+            ⚽ Beraberlik durumunda penaltılarda turu kim geçer? (Bilirsen +1 puan)
           </div>
           <div className="grid grid-cols-2 gap-2">
             <AdvanceBtn
