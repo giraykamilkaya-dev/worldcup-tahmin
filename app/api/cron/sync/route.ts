@@ -74,49 +74,69 @@ export async function GET(request: Request) {
     }
   }
 
-  // 2) Biten maçların TÜM tahminlerini gerçek skora göre yeniden hesapla.
-  // Sadece points=null olanları değil, hepsini; çünkü football-data maç
-  // sırasında yanlış/ara skor verip puanı bozmuş olabilir. Her turda doğru
-  // skora göre yeniden hesaplayınca yanlışlar kendiliğinden düzelir.
-  // Eleme turunda beraberlik + tur atlama bonusu da burada eklenir.
+  // 2) Biten maçların tahminlerini gerçek skora göre puanla.
+  // PERFORMANS: Eskiden her maç için ayrı select + her tahmin için ayrı
+  // update yapılıyordu (81 maç × N tahmin = yüzlerce sorgu, her 2 dakikada).
+  // Bu, Supabase bağlantı havuzunu doldurup sayfa açılışlarını yavaşlatıyordu.
+  // Artık: tüm biten maçların tahminlerini TEK sorguda çekip, yalnızca puanı
+  // DEĞİŞEN tahminleri topluca (paralel, küçük gruplar halinde) güncelliyoruz.
   const { data: finished } = await admin
     .from("matches")
     .select("id, stage, home_score, away_score, winner")
     .eq("status", "FINISHED");
 
-  let scoredPredictions = 0;
+  // Skoru belli olan biten maçları bir haritaya al
+  const finishedMap = new Map<
+    number,
+    { stage: string | null; home: number; away: number; winner: string | null }
+  >();
   for (const m of finished ?? []) {
     if (m.home_score == null || m.away_score == null) continue;
+    finishedMap.set(m.id, {
+      stage: m.stage,
+      home: m.home_score,
+      away: m.away_score,
+      winner: m.winner ?? null,
+    });
+  }
 
+  let scoredPredictions = 0;
+  const finishedIds = [...finishedMap.keys()];
+
+  if (finishedIds.length) {
+    // TEK sorgu: tüm biten maçların tüm tahminleri
     const { data: preds } = await admin
       .from("predictions")
-      .select("id, home_pred, away_pred, points, advance_pick, bonus")
-      .eq("match_id", m.id);
+      .select("id, match_id, home_pred, away_pred, points, advance_pick, bonus")
+      .in("match_id", finishedIds);
 
+    // Yalnızca puanı/bonusu değişen tahminleri topla
+    const updates: { id: number; points: number; bonus: number }[] = [];
     for (const p of preds ?? []) {
-      const base = calcPoints(p.home_pred, p.away_pred, m.home_score, m.away_score);
-      // Bonus sadece eleme turlarında ve oyuncu beraberlik dediğinde geçerli
+      const m = finishedMap.get(p.match_id);
+      if (!m) continue;
+      const base = calcPoints(p.home_pred, p.away_pred, m.home, m.away);
       const bonus = isKnockout(m.stage)
-        ? calcBonus(
-          p.advance_pick ?? null,
-          p.home_pred,
-          p.away_pred,
-          m.home_score,
-          m.away_score,
-          m.winner ?? null
-        )
+        ? calcBonus(p.advance_pick ?? null, p.home_pred, p.away_pred, m.home, m.away, m.winner)
         : 0;
       const total = base + bonus;
-      // points'e bonus dahil (puan tablosu points'i topluyor); bonus'u ayrıca
-      // sakla ki ekranda "+1 bonus" gösterebilelim.
       if (p.points !== total || (p.bonus ?? 0) !== bonus) {
-        await admin
-          .from("predictions")
-          .update({ points: total, bonus })
-          .eq("id", p.id);
-        scoredPredictions++;
+        updates.push({ id: p.id, points: total, bonus });
       }
     }
+
+    // Sadece değişenleri güncelle — küçük paralel gruplar halinde
+    // (hiçbir şey değişmediyse tek bir yazma bile yapılmaz)
+    const CHUNK = 20;
+    for (let i = 0; i < updates.length; i += CHUNK) {
+      const slice = updates.slice(i, i + CHUNK);
+      await Promise.all(
+        slice.map((u) =>
+          admin.from("predictions").update({ points: u.points, bonus: u.bonus }).eq("id", u.id)
+        )
+      );
+    }
+    scoredPredictions = updates.length;
   }
 
   return NextResponse.json({
