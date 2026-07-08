@@ -104,15 +104,35 @@ export async function GET(request: Request) {
   const finishedIds = [...finishedMap.keys()];
 
   if (finishedIds.length) {
-    // TEK sorgu: tüm biten maçların tüm tahminleri
-    const { data: preds } = await admin
-      .from("predictions")
-      .select("id, match_id, home_pred, away_pred, points, advance_pick, bonus")
-      .in("match_id", finishedIds);
+    // TEK sorgu yerine SAYFALAMA: Supabase varsayılan olarak en fazla 1000
+    // satır döndürür. Biten maç × oyuncu sayısı 1000'i aşınca tahminlerin bir
+    // kısmı hiç işlenmiyor ve puanları null kalıyordu. Bu yüzden .range() ile
+    // tüm tahminleri parça parça çekiyoruz.
+    const preds: {
+      id: number;
+      match_id: number;
+      home_pred: number;
+      away_pred: number;
+      points: number | null;
+      advance_pick: string | null;
+      bonus: number | null;
+    }[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data: page } = await admin
+        .from("predictions")
+        .select("id, match_id, home_pred, away_pred, points, advance_pick, bonus")
+        .in("match_id", finishedIds)
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (!page || page.length === 0) break;
+      preds.push(...page);
+      if (page.length < PAGE) break; // son sayfa
+    }
 
     // Yalnızca puanı/bonusu değişen tahminleri topla
     const updates: { id: number; points: number; bonus: number }[] = [];
-    for (const p of preds ?? []) {
+    for (const p of preds) {
       const m = finishedMap.get(p.match_id);
       if (!m) continue;
       const base = calcPoints(p.home_pred, p.away_pred, m.home, m.away);
