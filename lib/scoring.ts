@@ -67,6 +67,7 @@ export const KNOCKOUT_STAGES = [
   "LAST_16",
   "QUARTER_FINALS",
   "SEMI_FINALS",
+  "THIRD_PLACE",
   "FINAL",
 ];
 export function isKnockout(stage: string | null): boolean {
